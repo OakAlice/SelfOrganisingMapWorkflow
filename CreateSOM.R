@@ -26,9 +26,9 @@ dat <- na.omit(dat) # remove all the NAs
 
 #### INPUT: Combine behaviours ####
 # Only do this if you've already run the code
-ind<-which(dat$act=="Climb.1" | dat$act=="Climb.2" | dat$act=="Climb.3" | dat$act=="Climb.4" )
-levels(dat$act) <- c(levels(dat$act), "Climb")
-dat$act[ind]<-"Climb"
+#ind<-which(dat$act=="Climb.1" | dat$act=="Climb.2" | dat$act=="Climb.3" | dat$act=="Climb.4" )
+#levels(dat$act) <- c(levels(dat$act), "Climb")
+#dat$act[ind]<-"Climb"
 
 ####INPUT: Balance the dataset ####
 # visualise the current proportions
@@ -76,41 +76,34 @@ barplot(table_act, las = 2)
 ####INPUT: Choose training split ####
 
 # Version One: Random 70:30 split
-# 70% training data
-ind <- dat %>% group_by(dat$act) %>% sample_frac(.7)
-trDat<-trSamp2(ind)
+  # 70% training data
+  ind <- dat %>% group_by(dat$act) %>% sample_frac(.7)
+  trDat<-trSamp2(ind)
+  
+  #remaining 20%
+  tstind<-subset(dat, !(dat$X %in% ind$X))
+  tstDat<-trSamp2(tstind)
 
-#remaining 20%
-tstind<-subset(dat, !(dat$X %in% ind$X))
-tstDat<-trSamp2(tstind)
+## Version Two: Chronological Split
+  #### DO THIS
 
-#save(trDat, file = "new_trDat.rda")
-#save(tstDat, file = "new_tstDat.rda")
-
-
-##### OPTOMISE SHAPE OF SOM ###
-##    This test helps define the most accurate shape for your SOM. It uses
-##    parallel processing to achieve this (packages listed below), and the 
-##    function doSOM(line 255). Firstly, we set the shape of the SOMs to be
-##    tested. Then run the foreach code(line 100, this will take some time).
-##    Lastly, we will create a heat map which that represents how accurate 
-##    each SOM shape is for your data. Adjust behaviors on line 112 and 118.
-
-#### SOM SHAPE TEST ####
+#### OPTOMISE SHAPE OF SOM ####
+# Run experiments to test variations of SOM shapes
 
 library(parallel)
 numCores <- detectCores()
 registerDoParallel(numCores)
 
 gc()
-##see which shape is the best (10 times)
-for (bb in 1:3) {
+# see which shape is the best (10 times)
+for (bb in 1:10) {
   
-  somsize<-rep(seq(4,9,1),6) #acc
-  somsize2<-rep(4:9, times=1, each=6)
-  somsize3<-cbind(somsize,somsize2)
+  somsize<-rep(seq(4,9,1),6) #create some widths
+  somsize2<-rep(4:9, times=1, each=6) # create some lengths
+  somsize3<-cbind(somsize,somsize2) # these are the sizes
   
   acc3list <- matrix()
+  # perform the SOM mapping a bunch of times
   system.time(
     acc3list<-foreach(i = 1:36, .packages=c('kohonen'), .combine=rbind) %dopar% {
       doSOMperf(trDat,tstDat, somsize3[i,1], somsize3[i,2])
@@ -118,21 +111,16 @@ for (bb in 1:3) {
   )
   
   acc3<-acc3list
-  head(acc3)
-  tail(acc3)
-  
-  write.csv(acc3, 'SOMshape2.csv')
-  acc3<-read.csv('SOMshape2.csv')
   
   # long_DF <- acc3 %>% gather(act, acc3, c(Climb.1, Climb.2, Climb.3, Climb.4, Tree.movement, Tree.still, Walking.1, Walking.2, Walking.3, Walking.4, Ground.movement, Ground.still))
   long_DF <- acc3 %>% gather(act, acc3, c("Lying chest", "Panting", "Playing", "Sitting", "Sniffing",       
                                           "Trotting", "Walking", "Shaking", "Eating",         
                                           "Pacing", "Standing", "Drinking", "Galloping", "Carrying object"))
-  head(long_DF)
-  boxplot(acc3~shape.somsize, subset(long_DF, test=='ACCU'))
-  boxplot(acc3~shape.somsize+test, long_DF)
   
-  acc4<-subset(long_DF, test=='PREC')
+  #boxplot(acc3~shape.somsize, subset(long_DF, test=='ACCU'))
+  #boxplot(acc3~shape.somsize+test, long_DF)
+  
+  acc4<-subset(long_DF, test=='ACCU')
   
   #make heat map 
   df1<-data.frame(acc=acc4$acc3, width=acc4$width, height=acc4$height)
@@ -148,25 +136,27 @@ for (bb in 1:3) {
             screen = list(z = -90, x = -60, y = 0),
             xlab=list(label='height', cex = 1.0),
             ylab=list(label='width', cex = 1.0),
-            main=list(label= paste0('PREC'), cex=1.0), 
+            main=list(label= paste0('ACCU'), cex=1.0), 
             colorkey=list(labels=list(cex=1.0)),
             scales = list(cex=1.0),
             asp=1)
 }
-#####
 
 
-
+#### INPUT: CHOOSE THE BEST PERFORMING SOM AND DISPLAY ####
 system.time(
-  ssom <- supersom(trDat, grid = somgrid(9, 9, "hexagonal"))
+  ssom <- supersom(trDat, grid = somgrid(5, 8, "hexagonal"))
 )
 system.time(
   ssom.pred <- predict(ssom, newdata = tstDat)
 )
-ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
 
 ## Create Original Master SOM
-acc5  <- doSOM(trDat,tstDat, 9, 9) ## outputs list(SOM, somperf)
+acc5  <- doSOM(trDat,tstDat, 5, 8) ## outputs list(SOM, somperf)
+# save the prediction outputs
+pred_outputs <- acc5$somperf
+#write.csv(ptab, "COnfusionMatrix_NonverlapRandom.csv", row.names = FALSE)
+
 MSOM <- acc5$SOM
 
 #make the plot
@@ -174,16 +164,18 @@ colsch <- colorRampPalette(c("#A6CEE3" ,"#1F78B4" ,"#B2DF8A" ,"#33A02C", "#FB9A9
 cols2<-brewer.pal(11, 'Set3')
 plot(MSOM, heatkey = TRUE, palette.name=colsch, type = "codes", shape = "straight", ncolors = 11)
 
+
 #outputting the data for later
-save(MSOM, file="MSOM_9by9.3.rda")
+save(MSOM, file="MSOM_NonoverlapRandom_5by8.1.rda")
+#save(tstDat, file = "tstDat_OverlapRandom.rda")
 
 ssom.pred <- predict(MSOM, newdata = tstDat)
 ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
 
 #Save SOM figure
 #SAVE grid figures
-save(ptab, file =  "MSOM_9by9.3_Confusion_Matrix.rda")
-write.csv(ptab, "MSOM_9by9.3_Confusion_Matrix.csv")
+save(ptab, file =  "MSOM_5by8.1_Confusion_Matrix.rda")
+write.csv(ptab, "MSOM_5by8.1_Confusion_Matrix.csv")
 
 
 
