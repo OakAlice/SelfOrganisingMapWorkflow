@@ -2,90 +2,13 @@
 # To test each of the conditions, rerun the code with different ##INPUT##
 # Adapted from Gaschk et al., 2023
 
-# install.packages("pacman")
-library(pacman)
-p_load(here, tidyverse, kohonen, RColorBrewer, data.table, sentimentr, lattice, glue, parallel, foreach, doParallel, moments)
+#### read in all the training and testing data from previous stage
 
-# set the working directory to the project
-setwd(here())
-
-####INPUT: Choose training data ####
-  ## Condition1_processed.csv <- Overlapping data
-  ## Condition2_processed.csv <- Non-overlapping data
-
-dat0 <- read.csv("Condition2_processed.csv")
-
-dat <- dat0 # so I don't have to read it in again if I mess up
-
-unique(dat$act) # check these
-act <- as.factor(dat$act) # set as a factor
-
-dat<-dat[which(dat$act!='<undefined>'),] # remove all unknown activities
-dat <- dat[dat$act != '<undefined' & dat$act != 'Synchronization', ] # remove all of these too
-dat <- na.omit(dat) # remove all the NAs
-
-#### INPUT: Combine behaviours ####
-# Only do this if you've already run the code
-#ind<-which(dat$act=="Climb.1" | dat$act=="Climb.2" | dat$act=="Climb.3" | dat$act=="Climb.4" )
-#levels(dat$act) <- c(levels(dat$act), "Climb")
-#dat$act[ind]<-"Climb"
-
-####INPUT: Balance the dataset ####
-# visualise the current proportions
-table_act <- table(dat$act)
-barplot(table_act, las = 2)
-
-# remove the overrepresented behaviours by reducing all behaviours to the same max number of rows
-# Group the data by 'act' and count the number of rows in each group
-act_counts <- dat %>%
-  group_by(act) %>%
-  summarise(count = n())
-
-pp <- 400 # max number of rows, change this
-
-# Filter 'act' values with more than X rows
-over_acts <- act_counts %>%
-  filter(count > pp) %>% ## CHANGE THIS NUMBER HERE
-  pull(act)
-
-# Initialize an empty dataframe to store the subsampled data
-dat_subsampled <- data.frame()
-
-# Loop through 'act' values with more than pp rows
-for (act_value in over_acts) {
-  # Filter rows for the current 'act' value and randomly sample pp rows
-  sampled_data <- dat %>%
-    filter(act == act_value) %>%
-    sample_n(size = pp, replace = FALSE)
-  
-  # Combine the sampled data with the existing results
-  dat_subsampled <- bind_rows(dat_subsampled, sampled_data)
-}
-
-# Include all rows for behaviors with less than or equal to pp rows
-dat_subsampled <- bind_rows(dat_subsampled, dat %>%
-                              filter(act %in% act_counts$act[act_counts$count <= pp]))
-
-# Assign the result back to 'dat'
-dat <- dat_subsampled
-
-# Visually check the distribution of 'act'
-table_act <- table(dat$act)
-barplot(table_act, las = 2)
-
-####INPUT: Choose training split ####
-
-# Version One: Random 70:30 split
-  # 70% training data
-  ind <- dat %>% group_by(dat$act) %>% sample_frac(.7)
-  trDat<-trSamp2(ind)
-  
-  #remaining 20%
-  tstind<-subset(dat, !(dat$X %in% ind$X))
-  tstDat<-trSamp2(tstind)
-
-## Version Two: Chronological Split
-  #### DO THIS
+TrainingData <- list("Condition1Random" = "Condition1/Random/TrDat.rda", "Condition2Random" = "Condition2/Random/TrDat.rda",
+                      "Condition1Chron" = "Condition1/Chronological/TrDat.rda", "Condition2Chron" = "Condition2/Chronological/TrDat.rda")
+TestingData <- list("Condition1Random" = "Condition1/Random/TstDat.rda", "Condition2Random" = "Condition2/Random/TstDat.rda",
+                      "Condition1Chron" = "Condition1/Chronological/TstDat.rda", "Condition2Chron" = "Condition2/Chronological/TstDat.rda")
+ 
 
 #### OPTOMISE SHAPE OF SOM ####
 # Run experiments to test variations of SOM shapes
@@ -141,42 +64,6 @@ for (bb in 1:10) {
             scales = list(cex=1.0),
             asp=1)
 }
-
-
-#### INPUT: CHOOSE THE BEST PERFORMING SOM AND DISPLAY ####
-system.time(
-  ssom <- supersom(trDat, grid = somgrid(5, 8, "hexagonal"))
-)
-system.time(
-  ssom.pred <- predict(ssom, newdata = tstDat)
-)
-
-## Create Original Master SOM
-acc5  <- doSOM(trDat,tstDat, 5, 8) ## outputs list(SOM, somperf)
-# save the prediction outputs
-pred_outputs <- acc5$somperf
-#write.csv(ptab, "COnfusionMatrix_NonverlapRandom.csv", row.names = FALSE)
-
-MSOM <- acc5$SOM
-
-#make the plot
-colsch <- colorRampPalette(c("#A6CEE3" ,"#1F78B4" ,"#B2DF8A" ,"#33A02C", "#FB9A99" ,"#E31A1C", "#FDBF6F" ,"#FF7F00" ,"#CAB2D6", "#6A3D9A", "#FFFF99"))
-cols2<-brewer.pal(11, 'Set3')
-plot(MSOM, heatkey = TRUE, palette.name=colsch, type = "codes", shape = "straight", ncolors = 11)
-
-
-#outputting the data for later
-save(MSOM, file="MSOM_NonoverlapRandom_5by8.1.rda")
-#save(tstDat, file = "tstDat_OverlapRandom.rda")
-
-ssom.pred <- predict(MSOM, newdata = tstDat)
-ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
-
-#Save SOM figure
-#SAVE grid figures
-save(ptab, file =  "MSOM_5by8.1_Confusion_Matrix.rda")
-write.csv(ptab, "MSOM_5by8.1_Confusion_Matrix.csv")
-
 
 
 #### FUNCTIONS ####
@@ -238,12 +125,5 @@ doSOM <- function(trDat, tstDat, z, zz) { # Draw a sample of size 10k from all b
   return(SOMout)
 }
 
-# A custom function to make life easier
-trSamp2 <- function(x) { # Creates a training or test matrix, from data frame x, using a sample of size n (default is all rows)			
-  d <- x[,5:47] ## INPUT ## Match these to the actual columns
-  act <- as.factor(x$act) # Corresponding activities
-  out <- list(measurements = as.matrix(d), act = act)
-  return(out)
-}
 
 #####
