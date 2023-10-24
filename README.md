@@ -16,5 +16,5 @@ Data from [Vehkoaja et al., 2020](https://www.sciencedirect.com/science/article/
 ## Workflow
 1. ChunkAndProcess.R -> Convert the original DogMoveData.csv into chunks, and produce features with or without window overlap
 2. CreateTrainingTestingData.R -> Divide into training and testing data via random or non-random split, save the .rda output into respecive directories
-3. CreateSOM.R -> Workflow for training a self-organising map on each of the training and testing pairs produced above.
-4. VisualisingResults.R -> Code for producing plots and comparisons between the conditions
+3. TrialSOMShapes.R -> Trialling different SOM shapes in order to find the optimal grid size for use in the next step.
+4. CreateSOM.R -> Workflow for training a self-organising map of the size produced above.
