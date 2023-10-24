@@ -65,7 +65,7 @@ split_condition <- function(cond, filename, conditions, threshold) {
   ensure_dir_exists(file.path(cond, "Random"))
   ensure_dir_exists(file.path(cond, "Chronological"))
   
-  # Version One: Random 70:30 split
+# Version One: Random 70:30 split
   ind <- dat %>% group_by(dat$act) %>% sample_frac(.7)
   trDat<-trSamp2(ind)
   tstind<-subset(dat, !(dat$X %in% ind$X))
@@ -75,7 +75,7 @@ split_condition <- function(cond, filename, conditions, threshold) {
   save(trDat, file = file.path(cond, "Random", "TrDat.rda"))
   save(tstDat, file = file.path(cond, "Random", "TstDat.rda"))
   
-  # Version Two: Chronological 70:30 split
+# Version Two: Chronological 70:30 split
   # Extract individual_ID from the file column
   dat$individual_ID <- as.numeric(sub(".*_(\\d+).*", "\\1", dat$file))
   

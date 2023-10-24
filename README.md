@@ -1,7 +1,9 @@
 # DataLeakage
 Testing the effects of data leakage on model overfitting and accuracy using the kohonen Self-Organising Map. 
 
-I have noticed that there is not a standardised approach to data pre-processing in accelerometry behaviour recognition machine learning, and I want to find out what impact the different preprocessing steps have on the overall model performance. In these scripts I am testing the interaction between the window overlap and the method of splitting the training and testing data. My hypothesis was that the use of overlapping windows and random splitting would result in data leakage, causing those models to have an inflated accuracy 'outperforming' non-dataleakage models - for example, models that used chronological splits (i.e., first 70% from each individual tested on last 30% from each individual) and non-overlapping window models. I used the SOM because I am familiar with it from prior research.
+I've observed that there isn't a consistent method for data pre-processing in machine learning related to accelerometry behavior recognition. My goal is to understand the influence of various preprocessing techniques on overall model performance. Specifically, I wanted to look at the interaction of window overlap, and the strategy for splitting training and testing data. I hypothesized that combining overlapping windows with random data splits might introduce data leakage which could artificially inflate accuracy, making such models appear to "outperform" models without that leakage. For non-leakage models, I used chronological splits (using the first 70% of data from each individual for training and the last 30% for testing) as well as non-overlapping windows.
+
+I used the Self-Organizing Map (SOM) becauseI am familiar with it from previous research. Expansion of this project would trial multiple different models.
 
 Data from [Vehkoaja et al., 2020](https://www.sciencedirect.com/science/article/pii/S2352340922000348). SOM code adapted from the github of [Gaschk et al., 2023](https://github.com/cclemente/Animal_accelerometry/tree/main).
 

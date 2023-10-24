@@ -118,6 +118,8 @@ process_dog_data <- function(dog_id, DogMoveData, overlap=FALSE) {
   
   # Combine all the processed chunks into a single data frame
   processed_data <- do.call(rbind, processed_chunks)
+  # the reason why I chunk-process-recombine (seemingly pointless) is that I thought it would be faster 
+  # my laptop was struggling as it was lol
   
   return(processed_data)
 }
@@ -131,7 +133,7 @@ ensure_dir("IndDogMoveChunked")
 ensure_dir("Condition1")
 ensure_dir("Condition2")
 
-# Get unique DogIDs and process the first 4 dogs
+# Get unique DogIDs and process the first 4 dogs # again, only 4 dogs to spare my laptop
 unique_dog_ids <- unique(DogMoveData$DogID)[1:4]
 
 # Process data for each dog and condition
