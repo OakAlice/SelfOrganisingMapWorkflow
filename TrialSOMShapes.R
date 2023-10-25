@@ -2,7 +2,7 @@
 # Adapted from Gaschk et al., 2023
 
 library(pacman)
-p_load(parallel, here, dplyr)
+p_load(parallel, here, dplyr, tidyverse, kohonen, RColorBrewer, data.table, sentimentr, lattice, glue, parallel, foreach, doParallel, moments)
 
 setwd(here())
 
@@ -138,6 +138,7 @@ create_heatmap <- function(average_accuracies, filename = "heatmap.png") {
   return(heatmap)
 }
 
+
 #### INPUT: Names of everything ####
 tests <- c("Condition1Random", "Condition2Random", "Condition1Chron", "Condition2Chron")
 
@@ -149,7 +150,8 @@ results_list <- list()
 
 for (test in tests) {
   
-  test = "Condition2Chron"
+  #test = "Condition2andom"
+  
   setwd(savepaths[[test]]) # set the working directory to our spot
   
   load("TrDat.rda")

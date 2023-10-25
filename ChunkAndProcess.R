@@ -69,16 +69,21 @@ compute_features <- function(dat) {
   corgXZ <- cor(dat$GNeck_x, dat$GNeck_z, use="complete.obs")
   corgYZ <- cor(dat$GNeck_y, dat$GNeck_z, use="complete.obs")
   
+  time <- as.POSIXct((dat$t_sec[1] - 719529) * 86400, origin = "1970-01-01", tz = "UTC")
+  
+  activity = names(which.max(table(dat$Behavior_1)))
+  
   # Here you can add other features and calculations as needed
   
   # Return a dataframe with all the features
-  return(data.frame(meanX, meanY, meanZ, meangX, meangY, meangZ,
+  return(data.frame(time, meanX, meanY, meanZ, meangX, meangY, meangZ,
                     maxx, maxy, maxz, maxgx, maxgy, maxgz,
                     minx, miny, minz, mingx, mingy, mingz,
                     sdx, sdy, sdz, sdgx, sdgy, sdgz,
                     SMA, minODBA, maxODBA, minVDBA, maxVDBA, sumODBA, sumVDBA,
-                    corXY, corXZ, corYZ, corgXY, corgXZ, corgYZ))
+                    corXY, corXZ, corYZ, corgXY, corgXZ, corgYZ, activity))
 }
+
 
 process_dog_data <- function(dog_id, DogMoveData, overlap=FALSE) {
   
