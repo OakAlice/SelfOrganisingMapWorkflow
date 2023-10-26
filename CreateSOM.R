@@ -90,7 +90,7 @@ save_and_plot_optimal_SOM <- function(trDat, tstDat, width, height, save_path) {
   
   # Standard map from other papers
   png(filename = file.path("optimal_SOM_plot.png"))
-  map_image <- plot(SOM_model, heatkey = TRUE, palette.name = colours, type = "codes", shape = "straight", ncolors = 14)
+  map_image <- plot(SOM_model, heatkey = TRUE, col = colours, type = "codes", shape = "straight", ncolors = 14)
   print(map_image)
   dev.off()
   # note that "act" stands for activation: the activation level of a neuron (or node) shows 

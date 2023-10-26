@@ -1,43 +1,25 @@
-# Code to create the training and testing data, save as a .rda
-# these are saved to their own directories, allowing them to be retrieved later 
+# Code to create the training and testing data, saving them both as .rda files
 
-library(pacman)
-p_load(here, dplyr)
+source("GeneralFunctions.R")
+source("VariableEntry.R")
 
-setwd(here())
-
-## MANUAL SELECTION OF OVERREPRESENTATION VALUE
-  # before processing the data, choose how many rows to remove
-  dat0 <- read.csv("Condition1_processed.csv") # Example filename for visualization
-  table_activity <- table(dat0$activity)
-  barplot(table_activity, las = 2)
-  # put the thresholds you choose into the command at the very bottom
-
-# Functions
-# ensure directories exist
-  ensure_dir_exists <- function(dir_name) {
-    if (!dir.exists(dir_name)) {
-      dir.create(dir_name, recursive = TRUE, showWarnings = FALSE)
-    }
-  }  
-  
-# downsample the data according to the above determined value
-  downsample_data <- function(data, threshold) {
+# balance the data according to the above determined value
+balance_data <- function(MoveData, threshold) {
     
     # Determine counts of each 'activity' and identify over-represented behaviors
-    activity_counts <- data %>% 
+    activity_counts <- MoveData %>% 
       group_by(activity) %>%
       tally() %>%
       mutate(over_threshold = ifelse(n > threshold, threshold, n)) # Use the min of n and threshold
     
     # For over-represented behaviors, sample the desired threshold number of rows
-    oversampled_data <- data %>% 
+    oversampled_data <- MoveData %>% 
       inner_join(filter(activity_counts, n > threshold), by = "activity") %>%
       group_by(activity) %>%
       sample_n(size = first(over_threshold), replace = FALSE) # Use the calculated threshold
     
     # For other behaviors, take all rows
-    undersampled_data <- data %>% 
+    undersampled_data <- MoveData %>% 
       anti_join(filter(activity_counts, n > threshold), by = "activity")
     
     # Combine and return
@@ -46,7 +28,7 @@ setwd(here())
   
 # Formatting the data
 trSamp2 <- function(x) { 
-    d <- x[,5:47] ## INPUT ## Match these to the actual columns
+    d <- x[,5:47]
     activity <- as.factor(x$activity) # Corresponding activities
     out <- list(measurements = as.matrix(d), activity = activity)
     return(out)
@@ -59,7 +41,7 @@ split_condition <- function(cond, filename, conditions, threshold) {
   dat <- na.omit(dat)
   
   # Balance the data
-  dat <- downsample_data(dat, threshold)
+  dat <- balance_data(dat, threshold)
   
   # ensure the directories exist
   ensure_dir_exists(file.path(cond, "Random"))
@@ -107,15 +89,4 @@ split_condition <- function(cond, filename, conditions, threshold) {
   # Save the chronological training and testing data
   save(trDat, file = file.path(cond, "Chronological", "TrDat.rda"))
   save(tstDat, file = file.path(cond, "Chronological", "TstDat.rda"))
-}
-
-#### INPUT names of the files and thresholds ####
-# Process both conditions
-#condition_name <- c("Condition1", "Condition2")
-condition_name <- c("Condition2")
-filename <- list("Condition1" = "Condition1_processed.csv", "Condition2" = "Condition2_processed.csv")
-conditions <- list("Condition1" = "Overlap", "Condition2" = "Nonoverlap")
-threshold <- list("Condition1" = 20000, "Condition2" = 400)
-for (cond in condition_name) {
-  split_condition(cond, filename[[cond]], conditions[[cond]], threshold[[cond]])
 }
