@@ -1,5 +1,8 @@
 ## Execute the script, all functions in order
 
+library(pacman)
+p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs)
+
 
 # source the variables on the preceding script
 source("VariableEntry.R")
@@ -16,6 +19,12 @@ setwd(here())
   
   # select and rename the relevant columns
   MoveData <- subset_and_rename(MoveData0, columnSubset)
+  
+  # only select the test individuals
+  if (exists("test_individuals")){
+    selected_ids <- unique(MoveData$ID)[1:test_individuals]
+    MoveData <- subset(MoveData, ID %in% selected_ids)
+  }
   
   # format time # this will be different between studies
   # e.g., necessary for Axivity papers, but not for the DogMoveData
@@ -39,6 +48,7 @@ setwd(here())
   # select only the chosen behaviours
   MoveData <- MoveData[MoveData$activity %in% selectedBehaviours, ]
   write.csv(MoveData, 'Formatted_MoveData.csv') # save the output
+  
 
 #### Create Directories ####  
 # There can be different overlaps, different windows, and different splits
@@ -68,6 +78,7 @@ for (window_length in window) { # for each of the windows
     
     # Define the correct subdirectory path using Experiment path, window, and overlap
     overlap_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"))
+    print(overlap_path) # progress check
     
     processed_data <- process_data(MoveData, featuresList, window_length, overlap_percent)
     
@@ -77,8 +88,34 @@ for (window_length in window) { # for each of the windows
 }
   
 #### Create Training and Testing Data ####
-for (cond in condition_name) {
-  split_condition(cond, filename[[cond]], conditions[[cond]], threshold[[cond]])
+for (window_length in window) { # for each of the windows
+  for (overlap_percent in overlap) { # for each of the overlaps
+    for (split in splitMethod) { # for each of the split methods 
+    # Define the correct subdirectory path using Experiment path, window, and overlap
+      file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), 'Processed_Data.csv')
+      split_condition(file_path, threshold, split, trainingPercentage)
+    }
+  }
 }
 
-####
+#### Trial SOM shapes ####
+for (window_length in window) { # for each of the windows
+  for (overlap_percent in overlap) { # for each of the overlaps
+    for (split in splitMethod) { # for each of the split methods 
+      
+      window_length <- 1
+      overlap_percent <- 50
+      split <- c("chronological")
+      
+      file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
+      
+      # progress tracking
+      print(file_path)
+      
+      load(file = file.path(file_path, "TrainingData.rda"))
+      load(file = file.path(file_path, "TestingData.rda"))
+      optimal_dimensions <- run_som_tests(trDat, tstDat, file_path)
+      write.csv(optimal_dimensions, file.path(file_path, "Optimal_dimensions.csv"))
+    }
+  }
+}

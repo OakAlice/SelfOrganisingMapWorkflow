@@ -1,27 +1,24 @@
-# Script to test multiple shapes to find the optimal shape for SOM
+# Functions to test multiple shapes to find the optimal shape for SOM
 # Adapted from Gaschk et al., 2023
 
-library(pacman)
-p_load(parallel, here, dplyr, tidyverse, kohonen, RColorBrewer, data.table, sentimentr, lattice, glue, parallel, foreach, doParallel, moments)
-
-setwd(here())
-
-
-#### FUNCTIONS ####
-
+#file_path <- file.path(Experiment_path, paste0(window, "_sec_window"), paste0(overlap[1], "%_overlap"), split)
+#load(file = file.path(file_path, "TrainingData.rda"))
+#load(file = file.path(file_path, "TestingData.rda"))
+  
+  
 # run the actual SOM tests combining many of the functions above
-run_som_tests <- function(TrDat, TstDat) {
+run_som_tests <- function(trDat, tstDat, file_path) {
   
   results <- list()
   shape_accuracy_score <- list() # to store accuracy scores for each iteration
-  somsize3 = generate_shapes()
+  somsize3 = generate_shapes() # shapes to test
   
   AllIterationsResults <- data.frame() # initialize an empty dataframe outside the loop
   
-  for (bb in 1:36) { # loop through the 36 different shapes
+  for (bb in 1:nrow(somsize3)) { # loop through the different shapes
     
     for (iter in 1:10) { # Go through the 10 iterations for each shape
-      iteration_results <- testing_the_SOM(TrDat, TstDat, somsize3[bb,1], somsize3[bb,2])
+      iteration_results <- testing_the_SOM(trDat, tstDat, somsize3[bb,1], somsize3[bb,2])
       AllIterationsResults <- rbind(AllIterationsResults, iteration_results)
     }
     
@@ -38,7 +35,7 @@ run_som_tests <- function(TrDat, TstDat) {
     summarize(mean_acc = mean(acc), .groups = "drop")
   
   # make the heatmap using the average_accuracies
-  heatmap <- create_heatmap(average_accuracies)
+  heatmap <- create_heatmap(average_accuracies, file_path)
   
   best_shape <- determine_best_shape(average_accuracies)
   best_width <- best_shape$width
@@ -62,8 +59,18 @@ testing_the_SOM <- function(TrDat, TstDat, width, height) {  # originally doSOMp
   
   # build the som using the training data
   ssom <- supersom(TrDat, grid = somgrid(width, height, "hexagonal"))
-  # predict on the testing data
-  ssom.pred <- predict(ssom, newdata = TstDat)
+  # predict on the testing data # skip if it doesn't work
+  tryCatch({
+    ssom.pred <- predict(ssom, newdata = TstDat)
+  }, 
+  error = function(e) {
+    if (grepl("Number of columns of newdata do not match codebook vectors", e$message)) {
+      print("Error encountered with mismatched columns. Skipping this iteration.")
+      next()
+    } else {
+      stop(e)  # If it's a different error, continue with the error propagation
+    }
+  })
   # save the results as a table
   resultsTable <- table(predictions = ssom.pred$predictions$act, act = TstDat$act)
   
@@ -99,7 +106,7 @@ generate_accuracy_score <- function(AllIterationsResults) {
   # rearrange to be a long dataframe
   long_accuracy_scores <- accuracy_scores %>%
     gather(key = "behavior", value = "accuracy", 
-           `Carrying object`:`Walking`) %>%
+           2:length(selectedBehaviours)) %>%
             select(behavior, accuracy, width, height)
   mean_accuracy_scores <- long_accuracy_scores %>%
     group_by(width, height) %>%
@@ -111,15 +118,15 @@ generate_accuracy_score <- function(AllIterationsResults) {
 }
 
 # Function to create and save an accuracy heatmap
-create_heatmap <- function(average_accuracies, filename = "heatmap.png") {
+create_heatmap <- function(average_accuracies, file_path) {
   # Create a matrix
   df2 <- with(average_accuracies, tapply(mean_acc, list(shape = width, height), FUN= mean, na.rm=TRUE))
   
   # Define custom color map
   colours_heat3 = c('#F4E119', '#F7C93B', '#C4BB5F', '#87BE76', '#59BD87', '#2CB6A0', '#00AAC1', '#1B8DCD', '#3D56A6', '#3A449C')
   
-  # Start saving to PNG file
-  png(filename)
+  # Save the heatmap to a temporary location (because % wont work in the filepath here)
+  png("heatmap_temp_save.png")
   
   # Create the heatmap using Lattice plot
   heatmap <- levelplot(t(df2), cex.axis=1.0, cex.lab=1.0, col.regions=colorRampPalette(rev(colours_heat3)), 
@@ -135,32 +142,9 @@ create_heatmap <- function(average_accuracies, filename = "heatmap.png") {
   # Finish saving to PNG file
   dev.off()
   
+  # Now, move the heatmap from the temporary location to your desired location
+  # Use fs::file_move() to rename/move the file
+  fs::file_move("heatmap_temp_save.png", paste0(file_path, "/heatmap.png"))
+  
   return(heatmap)
-}
-
-
-#### INPUT: Names of everything ####
-tests <- c("Condition1Random", "Condition2Random", "Condition1Chron", "Condition2Chron")
-
-savepaths <- list("Condition1Random" = "Condition1/Random", "Condition2Random" = "Condition2/Random",
-                  "Condition1Chron" = "Condition1/Chronological", "Condition2Chron" = "Condition2/Chronological")
-
-#### INPUT: Execution of the script ####
-results_list <- list()
-
-for (test in tests) {
-  
-  #test = "Condition2andom"
-  
-  setwd(savepaths[[test]]) # set the working directory to our spot
-  
-  load("TrDat.rda")
-  load("TstDat.rda")
-  
-  # Run the test 10 times and select the optimal shape
-  optimal_dimensions <- run_som_tests(trDat, tstDat)
-  
-  print(paste(test[1], ": width", optimal_dimensions$best_width, "height", optimal_dimensions$best_height), sep = " ")
-
-  setwd(here()) # reset the working directory before next loop
 }

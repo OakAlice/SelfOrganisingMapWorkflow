@@ -62,6 +62,7 @@ compute_features <- function(window_chunk, featuresList) {
   }
   
   result$activity <- names(which.max(table(window_chunk$activity)))
+  result$ID <- window_chunk$ID[1]
   
   return(result)
 }
@@ -98,8 +99,6 @@ process_data <- function(MoveData, featuresList, window, overlap) {
       st <- st + (window_samples - overlapped_samples)
       fn <- fn + (window_samples - overlapped_samples)
     }
-    
-    
   }
   
   # Combine all the processed chunks into a single data frame

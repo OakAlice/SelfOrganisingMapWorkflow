@@ -1,9 +1,12 @@
 # DataLeakage
 Testing the effects of data leakage on model overfitting and accuracy using the kohonen Self-Organising Map. 
 
-I've observed that there isn't a consistent method for data pre-processing in machine learning related to accelerometry behavior recognition. My goal is to understand the influence of various preprocessing techniques on overall model performance. This script is designed to load in a labelled animal movement dataset and then run experiements with different hyperparameters. I used the Self-Organizing Map (SOM) because I am familiar with it from previous research. Expansion of this project will include multiple models.
+I've observed that there isn't a consistent method for data pre-processing in machine learning related to accelerometry behavior recognition. My goal is to understand the influence of various preprocessing techniques on overall model performance. This script is designed to load in a labelled animal movement dataset and then run experiments with different model parameters. I used the Self-Organizing Map (SOM) because I am familiar with it from previous research. Expansion of this project will include multiple models.
 
 Example data used was dog movement data from [Vehkoaja et al., 2020](https://www.sciencedirect.com/science/article/pii/S2352340922000348). SOM code adapted from the github of [Christofer Clemente](https://github.com/cclemente/Animal_accelerometry/tree/main).
+
+## Variables
+This script can be used to produce a SOM from any raw accelerometry data. You can adjust the degrees of freedom, sampling rate, window length, window overlap, calculated (time-domain) features, selected behaviours, the validation split, and number of data presentation epochs, from a single script. Future work will develop this into a user-friendly R-shiny.
 
 ## Workflow
 Download the scripts to the local computer, download the data to the same folder.

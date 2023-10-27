@@ -30,9 +30,8 @@ selectedBehaviours <- c("Drinking", "Eating", "Lying chest", "Panting", "Playing
 # time included automatically
 featuresList <- c("mean", "max", "min", "sd", "cor", "SMA", "minODBA", "maxODBA", "minVDBA", "maxVDBA")
 
-# Proportion of training data, as a percentage, or individuals as a count
-trainingPercentage <- 70
-trainingIndividuals <- 1
+# Proportion of training data, as a decimal percentage (for chronological and random only)
+trainingPercentage <- 0.7
 
 # Sampling Threshold, run the below code to visualise the dataset and choose a threshold
 ####### THIS IS GOING TO HAVE TO BE AUTO, OR A PROMPT SCREEN???
@@ -47,4 +46,4 @@ window <- 1
 overlap <- c(0, 50)
 
 # Training Testing split method (choose from: random, chronological, LOIO)
-splitMethod <- c("random", "chronological")
+splitMethod <- c("random", "chronological", "LOIO")
