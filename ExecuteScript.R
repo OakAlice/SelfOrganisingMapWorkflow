@@ -103,9 +103,9 @@ for (window_length in window) { # for each of the windows
   for (overlap_percent in overlap) { # for each of the overlaps
     for (split in splitMethod) { # for each of the split methods 
       
-      window_length <- 1
-      overlap_percent <- 50
-      split <- c("chronological")
+      #window_length <- 1
+      #overlap_percent <- 50
+      #split <- c("chronological")
       
       file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
       
@@ -119,3 +119,35 @@ for (window_length in window) { # for each of the windows
     }
   }
 }
+
+#### DEVELOP THE SOM MAPS ####
+# Essentially the same execution as above, but using the optimal dimensions
+for (window_length in window) { # for each of the windows
+  for (overlap_percent in overlap) { # for each of the overlaps
+    for (split in splitMethod) { # for each of the split methods 
+      
+      #window_length <- 1
+      #overlap_percent <- 50
+      #split <- c("random")
+      
+      file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
+      
+      # progress tracking
+      print(file_path)
+      
+      # load the files
+      load(file = file.path(file_path, "TrainingData.rda"))
+      load(file = file.path(file_path, "TestingData.rda"))
+      optimal_dimensions <- read.csv(file = file.path(file_path, "Optimal_dimensions.csv"))
+      
+      # extract the shape
+      width <- optimal_dimensions$best_width
+      height <- optimal_dimensions$best_height
+      
+      # produce the results
+      som_results <- performOptimalSOM(trDat, tstDat, width, height, file_path)
+      save_and_plot_optimal_SOM(trDat, tstDat, width, height, file_path)
+    }
+  }
+}
+  

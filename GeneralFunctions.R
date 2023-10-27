@@ -23,3 +23,9 @@ ensure_dir <- function(dir_name) {
   }
 }
 
+plot_and_move <- function(filename, file_path, plot_expr) {
+  png(filename = filename)
+  eval(plot_expr)
+  dev.off()
+  fs::file_move(filename, file.path(file_path, filename))
+}
