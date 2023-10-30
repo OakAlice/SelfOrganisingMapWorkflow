@@ -31,6 +31,12 @@ for (w in window) { # for each of the window sizes create folders
     for (s in splitMethod) { # for each of the split methods
       split_path <- file.path(overlap_path, s)
       ensure_dir(split_path)
+      
+      for (e in data_presentations) {
+        epochs_path <- file.path(split_path, paste0(e, "_epochs"))
+        ensure_dir(epochs_path)
+                                 
+      }
     }
   }
 }
@@ -45,6 +51,7 @@ for (w in window) { # for each of the window sizes create folders
   
   # only select the test individuals
   if (exists("test_individuals")){
+    # selected_ids <- 47
     selected_ids <- unique(MoveData$ID)[1:test_individuals]
     MoveData <- subset(MoveData, ID %in% selected_ids)
   }
@@ -74,7 +81,7 @@ for (w in window) { # for each of the window sizes create folders
 
 
 #### Feature Creation ####
-MoveData <- read.csv('Formatted_MoveData.csv')
+MoveData <- read.csv(paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv'))
 # Process data, creating features according to window length and overlap
 for (window_length in window) { # for each of the windows
   for (overlap_percent in overlap) { # for each of the overlaps
@@ -108,8 +115,8 @@ for (window_length in window) { # for each of the windows
     for (split in splitMethod) { # for each of the split methods 
       
       #window_length <- 1
-      #overlap_percent <- 50
-      #split <- c("random")
+      #overlap_percent <- 0
+      #split <- c("LOIO")
       
       file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
       
@@ -129,12 +136,15 @@ for (window_length in window) { # for each of the windows
 for (window_length in window) { # for each of the windows
   for (overlap_percent in overlap) { # for each of the overlaps
     for (split in splitMethod) { # for each of the split methods 
+      for (epochs in data_presentations) { # for each of the rlen lengths
       
       #window_length <- 1
-      #overlap_percent <- 50
-      #split <- c("random")
-      
-      file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
+      #overlap_percent <- 0
+      #split <- c("LOIO")
+      # epochs <- data_presentations[1]
+        
+      file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), 
+                             paste0(overlap_percent, "%_overlap"), split)
       
       # progress tracking
       print(file_path)
@@ -149,9 +159,10 @@ for (window_length in window) { # for each of the windows
       height <- optimal_dimensions$best_height
       
       # produce the results
-      som_results <- performOptimalSOM(trDat, tstDat, width, height, file_path)
-      save_and_plot_optimal_SOM(trDat, tstDat, width, height, file_path)
+      som_results <- performOptimalSOM(trDat, tstDat, width, height, file_path, epochs)
+      #save_and_plot_optimal_SOM(trDat, tstDat, width, height, file_path, epochs)
     }
+   }
   }
 }
 
@@ -162,4 +173,4 @@ Results_maps <- find_all_instances(paste0("Experiment_", ExperimentNumber), "opt
 Plot_results(ExperimentNumber, Results_maps)
 display_experiment_params(ExperimentNumber, MovementData, test_individuals, current_Hz, 
                            desired_Hz, columnSubset, selectedBehaviours, featuresList, 
-                           trainingPercentage, threshold, window, overlap, splitMethod)
+                           trainingPercentage, threshold, window, overlap, splitMethod, data_presentations)

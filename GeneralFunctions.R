@@ -42,7 +42,7 @@ find_all_instances <- function(root_dir, filename) {
 display_experiment_params <- function(
     ExperimentNumber, MovementData, test_individuals, current_Hz, desired_Hz,
     columnSubset, selectedBehaviours, featuresList, trainingPercentage, 
-    threshold, window, overlap, splitMethod
+    threshold, window, overlap, splitMethod, data_presentations
 ) {
   # Create the wide data frame
   experiment_params <- data.frame(
@@ -58,7 +58,8 @@ display_experiment_params <- function(
     Threshold = threshold,
     Window = window,
     Overlap = paste(overlap, collapse = ", "),
-    SplitMethod = paste(splitMethod, collapse = ", ")
+    SplitMethod = paste(splitMethod, collapse = ", "), 
+    data_presentations = paste(data_presentations, collapse = ",")
   )
   
   # Save table

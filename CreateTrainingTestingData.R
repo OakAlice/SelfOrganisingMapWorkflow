@@ -28,9 +28,9 @@ balance_data <- function(dat, threshold) {
     return(bind_rows(oversampled_data, undersampled_data))
   }
   
-# Formatting the data
+# Formatting the data #### MAY HAVE TO CHANGE THIS
 trSamp2 <- function(x) { 
-    d <- x[,2:33]
+    d <- x[,2:21]
     activity <- as.factor(x$activity) # Corresponding activities
     out <- list(measurements = as.matrix(d), activity = activity)
     return(out)
@@ -38,6 +38,8 @@ trSamp2 <- function(x) {
   
 # process the data
 split_condition <- function(file_path, threshold, split, trainingPercentage) {
+  # file_path <- "Experiment_3/1_sec_window/0%_overlap/Processed_Data.csv"
+  # split <-  "LOIO"
   
   dat <- read.csv(file_path)
   dat <- na.omit(dat)
@@ -85,6 +87,7 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
     # Sample a random individual from the dataset
     unique_IDs <- unique(dat$ID)
     selected_individual <- sample(unique_IDs, 1)
+    #selected_individual <- 20
     
     tstDat <- dat %>% filter(ID == selected_individual)
     
@@ -101,5 +104,6 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
   
   # save the testing data
   testing_file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split, 'TestingData.rda')
+  #testing_file_path <- file.path('Included_TestingData.rda')
   save(tstDat, file = testing_file_path)
 }

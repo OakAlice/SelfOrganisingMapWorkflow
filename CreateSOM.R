@@ -3,12 +3,13 @@
 source("GeneralFunctions.R")
 
 # when you have determined which shape is the best, run the full version and get all the outputs
-performOptimalSOM <- function(trDat, tstDat, width, height, file_path) {
+performOptimalSOM <- function(trDat, tstDat, width, height, file_path, epochs) {
   
-  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"))
+  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"), rlen = epochs)
   
   # save this optimal SOM
-  save(ssom, file = file.path(file_path, "Final_SOM.rda"))
+  file_path2 <- file.path(file_path, paste0(epochs, "_epochs"))
+  save(ssom, file = file.path(file_path2, "Final_SOM.rda"))
   
   ssom.pred <- predict(ssom, newdata = tstDat)
   ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
@@ -25,7 +26,7 @@ performOptimalSOM <- function(trDat, tstDat, width, height, file_path) {
   
   dat_out<-as.data.frame(rbind(SENS,PREC,SPEC,ACCU))
   statistical_results <- cbind(test = rownames(dat_out), dat_out)
-  write.csv(statistical_results, file.path(file_path, "Statistical_results.csv"))
+  write.csv(statistical_results, file.path(file_path2, "Statistical_results.csv"))
   
   SOMoutput <- list(SOM = ssom, SOM_performance = statistical_results)
   
@@ -34,17 +35,17 @@ performOptimalSOM <- function(trDat, tstDat, width, height, file_path) {
 }
 
 # final output, saving the trained SOM, plot it, and save the confusion matrix
-save_and_plot_optimal_SOM <- function(trDat, tstDat, width, height, file_path) {
+save_and_plot_optimal_SOM <- function(trDat, tstDat, width, height, file_path, epochs) {
   
   # Create a confusion matrix
-  load(file = file.path(file_path, "Final_SOM.rda"))
+  load(file = file.path(file_path, paste0(epochs, "_epochs"), "Final_SOM.rda"))
   ssom.pred <- predict(ssom, newdata = tstDat)
   ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
-  write.csv(ptab, file.path(file_path, "Confusion_Matrix.csv"))
+  write.csv(ptab, file.path(file_path, paste0(epochs, "_epochs"), "Confusion_Matrix.csv"))
   
   # make plots
   # Perform SOM with the optimal width and height
-  SOMoutput <- performOptimalSOM(trDat, tstDat, width, height, file_path)
+  SOMoutput <- performOptimalSOM(trDat, tstDat, width, height, file_path, epochs)
   
   # Extract the prediction outputs
   pred_outputs <- SOMoutput$SOM_performance

@@ -1,7 +1,8 @@
 # Functions to test multiple shapes to find the optimal shape for SOM
 # Adapted from Gaschk et al., 2023
 
-#file_path <- file.path(Experiment_path, paste0(window, "_sec_window"), paste0(overlap[1], "%_overlap"), split)
+# split <- "LOIO"
+#file_path <- file.path(Experiment_path, paste0(window, "_sec_window"), paste0(overlap, "%_overlap"), split)
 #load(file = file.path(file_path, "TrainingData.rda"))
 #load(file = file.path(file_path, "TestingData.rda"))
   
@@ -61,7 +62,7 @@ testing_the_SOM <- function(trDat, tstDat, width, height) {  # originally doSOMp
   ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"))
   # predict on the testing data # skip if it doesn't work
   tryCatch({
-    ssom.pred <- predict(ssom, newdata = TstDat)
+    ssom.pred <- predict(ssom, newdata = tstDat)
   }, 
   error = function(e) {
     if (grepl("Number of columns of newdata do not match codebook vectors", e$message)) {
@@ -72,7 +73,7 @@ testing_the_SOM <- function(trDat, tstDat, width, height) {  # originally doSOMp
     }
   })
   # save the results as a table
-  resultsTable <- table(predictions = ssom.pred$predictions$act, act = TstDat$act)
+  resultsTable <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
   
   # use table to make statistics for understanding the model performance
   true_positives  <- diag(resultsTable)
