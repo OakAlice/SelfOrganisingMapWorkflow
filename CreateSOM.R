@@ -58,12 +58,17 @@ save_and_plot_optimal_SOM <- function(trDat, tstDat, width, height, file_path) {
   # Use the function to save and move the plots
   # main mapping plots
   #plot_and_move("Mapping.png", { plot(SOM_model, type="mapping", pchs=20, col=colours, main="Mapping of behaviors on SOM") })
-  plot_and_move("optimal_SOM_plot.png", { plot(SOM_model, heatkey = TRUE, col = colours, type = "codes", shape = "straight", ncolors = 14) })
+  plot_and_move("optimal_SOM_plot.png", file_path,
+                { plot(SOM_model, heatkey = TRUE, col = colours, type = "codes", shape = "straight", ncolors = 14) })
   
-  plot_and_move("Training_Process.png", { plot(SOM_model, type="changes", main = "Training Process") })
-  plot_and_move("Codes_Weight.png", { plot(SOM_model, type="codes", main="Codes/Weights of the SOM nodes") })
-  plot_and_move("Counts.png", { plot(SOM_model, type="counts", main="Counts") })
-  plot_and_move("Quality.png", { plot(SOM_model, type="quality", main="Quality") })
+  plot_and_move("Training_Process.png", file_path,
+                { plot(SOM_model, type="changes", main = "Training Process") })
+  plot_and_move("Codes_Weight.png", file_path,
+                { plot(SOM_model, type="codes", main="Codes/Weights of the SOM nodes") })
+  plot_and_move("Counts.png", file_path,
+                { plot(SOM_model, type="counts", main="Counts") })
+  plot_and_move("Quality.png", file_path,
+                { plot(SOM_model, type="quality", main="Quality") })
   # Return the confusion matrix for additional use if necessary
   return(ptab)
 }

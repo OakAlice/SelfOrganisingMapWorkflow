@@ -55,10 +55,10 @@ determine_best_shape <- function(average_accuracies) {
 }
 
 # the actual test that's performed on the training/testing data, returns overallResultsTable
-testing_the_SOM <- function(TrDat, TstDat, width, height) {  # originally doSOMperf
+testing_the_SOM <- function(trDat, tstDat, width, height) {  # originally doSOMperf
   
   # build the som using the training data
-  ssom <- supersom(TrDat, grid = somgrid(width, height, "hexagonal"))
+  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"))
   # predict on the testing data # skip if it doesn't work
   tryCatch({
     ssom.pred <- predict(ssom, newdata = TstDat)

@@ -4,13 +4,13 @@
 #### ONE VARIABLE / SET PER RUN ####
 
 # Experiment Number # so all the results go into differerent folders and dont write over
-ExperimentNumber <- 1
+ExperimentNumber <- 2
 
 # The data to analyse
 MovementData <- "DogMoveData.csv"
 
 # how many individuals to sample # mainly to spare my laptop processing power for mini-tests
-test_individuals <- 4
+test_individuals <- 10
 
 # Desired sampling frequency, as Hz (potentially different from actual sampling frequency)
 current_Hz <- 100
@@ -43,7 +43,7 @@ threshold <- 400
 window <- 1
 
 # Window overlap, as a % # if <0, is overlapping
-overlap <- c(0, 50)
+overlap <- c(0, 50, 90)
 
 # Training Testing split method (choose from: random, chronological, LOIO)
 splitMethod <- c("random", "chronological", "LOIO")

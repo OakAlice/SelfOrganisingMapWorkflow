@@ -30,7 +30,7 @@ balance_data <- function(dat, threshold) {
   
 # Formatting the data
 trSamp2 <- function(x) { 
-    d <- x[,1:32]
+    d <- x[,2:33]
     activity <- as.factor(x$activity) # Corresponding activities
     out <- list(measurements = as.matrix(d), activity = activity)
     return(out)
@@ -59,7 +59,7 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
     
   } else if (split == "chronological") { 
     
-    # Group by ID and behavior, arrange chronologically (assuming there's a timestamp column for this),
+    # Group by ID and behavior, take the first % as the training 
     # and calculate the split index for each ID-behavior combination
     id_behavior_split <- dat %>%
       group_by(ID, activity) %>%
@@ -82,28 +82,13 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
     
   } else if (split == "LOIO") {
     
-    # find the individuals who exhibited every behaviour
-    unique_behaviors <- unique(dat$behavior)
+    # Sample a random individual from the dataset
+    unique_IDs <- unique(dat$ID)
+    selected_individual <- sample(unique_IDs, 1)
     
-    # Identify individuals who have exhibited all behaviors
-    selected_individuals <- dat %>%
-      group_by(ID) %>%
-      summarise(all_behaviors = all(unique_behaviors %in% behavior)) %>%
-      filter(all_behaviors) %>%
-      pull(ID)
+    tstDat <- dat %>% filter(ID == selected_individual)
     
-    # Check if there are enough individuals to split into training and test sets
-    if (length(selected_individuals) <= 2) {
-      print("Insufficient number of individuals who have exhibited all behaviors. Skipping this iteration.")
-      return()
-    }
-    
-    # select an ID as the test set
-    test_id <- sample(selected_individuals, 1)
-    
-    tstDat <- dat %>% filter(ID == test_id)
-    trDat <- dat %>% filter(ID != test_id)
-    
+    trDat <- dat %>% filter(ID != selected_individual)
   }
   
   # Apply trSamp2 to the resultant datasets to format them for the SOM

@@ -1,7 +1,7 @@
 ## Execute the script, all functions in order
 
 library(pacman)
-p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs)
+p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, filestrings, grid, png)
 
 
 # source the variables on the preceding script
@@ -9,8 +9,31 @@ source("VariableEntry.R")
 source("GeneralFunctions.R")
 source("FeatureProcessing.R")
 source("CreateTrainingTestingData.R")
+source("TrialSOMShapes.R")
+source("CreateSOM.R")
+source("SOMResults.R")
 
 setwd(here())
+
+#### Create Directories ####  
+# There can be different overlaps, different windows, and different splits
+Experiment_path <- paste0("Experiment_", ExperimentNumber)
+ensure_dir(Experiment_path) # experiment directory
+
+for (w in window) { # for each of the window sizes create folders
+  window_path <- file.path(Experiment_path, paste0(w, "_sec_window"))
+  ensure_dir(window_path)
+  
+  for (o in overlap) { # for each of the overlap %s
+    overlap_path <- file.path(window_path, paste0(o, "%_overlap"))
+    ensure_dir(overlap_path)
+    
+    for (s in splitMethod) { # for each of the split methods
+      split_path <- file.path(overlap_path, s)
+      ensure_dir(split_path)
+    }
+  }
+}
 
 
 #### Format Data ####
@@ -47,28 +70,8 @@ setwd(here())
   
   # select only the chosen behaviours
   MoveData <- MoveData[MoveData$activity %in% selectedBehaviours, ]
-  write.csv(MoveData, 'Formatted_MoveData.csv') # save the output
-  
+  write.csv(MoveData,paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv')) # save the output
 
-#### Create Directories ####  
-# There can be different overlaps, different windows, and different splits
-Experiment_path <- paste0("Experiment_", ExperimentNumber)
-ensure_dir(Experiment_path) # experiment directory
-
-for (w in window) { # for each of the window sizes create folders
-  window_path <- file.path(Experiment_path, paste0(w, "_sec_window"))
-  ensure_dir(window_path)
-    
-  for (o in overlap) { # for each of the overlap %s
-    overlap_path <- file.path(window_path, paste0(o, "%_overlap"))
-    ensure_dir(overlap_path)
-      
-    for (s in splitMethod) { # for each of the split methods
-      split_path <- file.path(overlap_path, s)
-      ensure_dir(split_path)
-    }
-  }
-}
 
 #### Feature Creation ####
 MoveData <- read.csv('Formatted_MoveData.csv')
@@ -93,6 +96,7 @@ for (window_length in window) { # for each of the windows
     for (split in splitMethod) { # for each of the split methods 
     # Define the correct subdirectory path using Experiment path, window, and overlap
       file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), 'Processed_Data.csv')
+      print(file_path)
       split_condition(file_path, threshold, split, trainingPercentage)
     }
   }
@@ -105,7 +109,7 @@ for (window_length in window) { # for each of the windows
       
       #window_length <- 1
       #overlap_percent <- 50
-      #split <- c("chronological")
+      #split <- c("random")
       
       file_path <- file.path(Experiment_path, paste0(window_length, "_sec_window"), paste0(overlap_percent, "%_overlap"), split)
       
@@ -150,4 +154,12 @@ for (window_length in window) { # for each of the windows
     }
   }
 }
-  
+
+#### SOM Results ####
+Results_tables <- find_all_instances(paste0("Experiment_", ExperimentNumber), "Statistical_results.csv")
+Summarise_results(ExperimentNumber, Results_tables)
+Results_maps <- find_all_instances(paste0("Experiment_", ExperimentNumber), "optimal_SOM_plot.png")
+Plot_results(ExperimentNumber, Results_maps)
+display_experiment_params(ExperimentNumber, MovementData, test_individuals, current_Hz, 
+                           desired_Hz, columnSubset, selectedBehaviours, featuresList, 
+                           trainingPercentage, threshold, window, overlap, splitMethod)
