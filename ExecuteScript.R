@@ -1,8 +1,7 @@
 ## Execute the script, all functions in order
 
 library(pacman)
-p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, filestrings, grid, png)
-
+p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, grid, png)
 
 # source the variables on the preceding script
 source("VariableEntry.R")
@@ -16,7 +15,7 @@ source("SOMResults.R")
 setwd(here())
 
 #### Create Directories ####  
-# There can be different overlaps, different windows, and different splits
+# There can be different overlaps, windows, splits, and epochs
 Experiment_path <- paste0("Experiment_", ExperimentNumber)
 ensure_dir(Experiment_path) # experiment directory
 
@@ -160,7 +159,7 @@ for (window_length in window) { # for each of the windows
       
       # produce the results
       som_results <- performOptimalSOM(trDat, tstDat, width, height, file_path, epochs)
-      #save_and_plot_optimal_SOM(trDat, tstDat, width, height, file_path, epochs)
+      save_and_plot_optimal_SOM(trDat, tstDat, width, height, file_path, epochs)
     }
    }
   }

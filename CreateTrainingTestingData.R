@@ -6,27 +6,26 @@ source("VariableEntry.R")
 # balance the data according to the above determined value
 balance_data <- function(dat, threshold) {
   
-  #dat <- processed_data # test setting
-    
-    # Determine counts of each 'activity' and identify over-represented behaviors
-    activity_counts <- dat %>% 
-      group_by(activity) %>%
-      tally() %>%
-      mutate(over_threshold = ifelse(n > threshold, threshold, n)) # Use the min of n and threshold
-    
-    # For over-represented behaviors, sample the desired threshold number of rows
-    oversampled_data <- dat %>% 
-      inner_join(filter(activity_counts, n > threshold), by = "activity") %>%
-      group_by(activity) %>%
-      sample_n(size = first(over_threshold), replace = FALSE) # Use the calculated threshold
-    
-    # For other behaviors, take all rows
-    undersampled_data <- dat %>% 
-      anti_join(filter(activity_counts, n > threshold), by = "activity")
-    
-    # Combine and return
-    return(bind_rows(oversampled_data, undersampled_data))
-  }
+  # Determine counts of each 'activity' and identify over-represented behaviors
+  activity_counts <- dat %>% 
+    group_by(activity) %>%
+    tally() %>%
+    mutate(over_threshold = ifelse(n > threshold, threshold, n)) # Use the min of n and threshold
+  
+  # For over-represented behaviors, sample the desired threshold number of rows or all if less
+  oversampled_data <- dat %>% 
+    inner_join(activity_counts %>% filter(n > threshold), by = "activity") %>%
+    group_by(activity) %>%
+    sample_n(size = min(over_threshold[1], n()), replace = FALSE) 
+  
+  # For other behaviors, take all rows
+  undersampled_data <- dat %>% 
+    anti_join(filter(activity_counts, n > threshold), by = "activity")
+  
+  # Combine and return
+  balance_data <- bind_rows(oversampled_data, undersampled_data)
+  return(balance_data)
+}
   
 # Formatting the data #### MAY HAVE TO CHANGE THIS
 trSamp2 <- function(x) { 
@@ -38,13 +37,14 @@ trSamp2 <- function(x) {
   
 # process the data
 split_condition <- function(file_path, threshold, split, trainingPercentage) {
-  # file_path <- "Experiment_3/1_sec_window/0%_overlap/Processed_Data.csv"
-  # split <-  "LOIO"
+  # file_path <- "Experiment_4/1_sec_window/0%_overlap/Processed_Data.csv"
+  # split <-  "random"
   
   dat <- read.csv(file_path)
   dat <- na.omit(dat)
   
   # Balance the data
+  # dat <- balance_data
   dat <- balance_data(dat, threshold)
 
 # Split data by different conditions
@@ -84,15 +84,18 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
     
   } else if (split == "LOIO") {
     
+    number_leave_out <- ceiling(0.2*test_individuals)
+    
     # Sample a random individual from the dataset
     unique_IDs <- unique(dat$ID)
-    selected_individual <- sample(unique_IDs, 1)
+    selected_individual <- sample(unique_IDs, number_leave_out)
     #selected_individual <- 20
     
-    tstDat <- dat %>% filter(ID == selected_individual)
+    tstDat <- dat %>% filter(ID %in% selected_individual)
     
-    trDat <- dat %>% filter(ID != selected_individual)
-  }
+    trDat <- subset(dat, !(ID %in% selected_individual))
+  
+}
   
   # Apply trSamp2 to the resultant datasets to format them for the SOM
   trDat <- trSamp2(trDat)

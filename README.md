@@ -14,6 +14,11 @@ Download the scripts to the local computer, download the data to the same folder
 - ExecuteScript.R -> Master Script that pulls functions from each subsequent file, integrates, and executes.
 - GeneralFunctions.R -> Functions that get used in multiple scripts or are just random.
 - FeatureProcessing.R -> Function page to produce features with or without window overlap.
-- CreateTrainingTestingData.R -> Divide into training and testing data.
+- CreateTrainingTestingData.R -> Divide into training and testing data. Note that you will have to manually experiment with the threshold value and set it approporiately.
 - TrialSOMShapes.R -> Trialing different SOM shapes in order to find the optimal grid size for use in the next step.
 - CreateSOM.R -> Workflow for training a self-organising map of the size produced above.
+
+## Considerations?
+# Process data for each dog
+  processed_data <- lapply(unique_dog_ids, function(dog_id) process_dog_data(dog_id, DogMoveData))
+  
