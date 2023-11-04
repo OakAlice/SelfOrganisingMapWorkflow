@@ -1,8 +1,6 @@
 # Given the window sizes, overlaps, and list of features specified on the main page
 # process the data by that specification
 
-source("VariableEntry.R")
-
 # compute features based on the features list provided
 compute_features <- function(window_chunk, featuresList) {
   
@@ -77,13 +75,12 @@ process_data <- function(MoveData, featuresList, window, overlap) {
   
   # Define the starting and ending points for the chunks
   st <- 1
-  fn <- window_samples
-  
+
   # Iterate over the chunks of data
   while (fn <= nrow(MoveData)) {
     
     # Extract the current chunk
-    window_chunk <- MoveData[st:fn, ]
+    window_chunk <- MoveData[st:st+window_samples-1, ]
     
     # Compute features for the chunk
     features_data <- compute_features(window_chunk, featuresList)
@@ -93,11 +90,9 @@ process_data <- function(MoveData, featuresList, window, overlap) {
     
     if (overlap == 0) { # if no overlap, advance by a full window length
       st <- st + window_samples
-      fn <- fn + window_samples
     } else { # if there is some overlap, calculate it
       overlapped_samples <- (overlap / 100) * window_samples
       st <- st + (window_samples - overlapped_samples)
-      fn <- fn + (window_samples - overlapped_samples)
     }
   }
   

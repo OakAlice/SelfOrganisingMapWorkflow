@@ -5,12 +5,12 @@ Summarise_results <- function(ExperimentNumber, Results_tables) {
   Summary_results <- data.frame()
   
   for (results in Results_tables) {
-    # results <- Results_tables[1]
+    # table1 <- dat_out
     
     table1 <- read.csv(results)
     
     # Compute the average for each metric
-    table1$average <- rowMeans(table1[, 3:12], na.rm = TRUE)
+    table1$average <- rowMeans(table1[, 3:10], na.rm = TRUE)
     
     # Extract subdirectory names from the path
     subdirs <- unlist(strsplit(dirname(results), "/"))[-1]

@@ -3,14 +3,14 @@
 
 #### ONE VARIABLE / SET PER RUN ####
 
-# Experiment Number # so all the results go into differerent folders and dont write over
-ExperimentNumber <- 4
+# Experiment Number # so all the results go into different folders and don't write over
+ExperimentNumber <- 5
 
 # The data to analyse
 MovementData <- "DogMoveData.csv"
 
 # how many individuals to sample # mainly to spare my laptop processing power for mini-tests
-test_individuals <- 45
+test_individuals <- 10
 
 # Desired sampling frequency, as Hz (potentially different from actual sampling frequency)
 current_Hz <- 100
@@ -19,7 +19,7 @@ desired_Hz <- 20
 # tell me what each of the columns are the ID, Time, X_accel, Y_accel, Z_accel, X_gyro, Y_gyro, Z_gyro, and activity
 columnSubset <- c("DogID" = "ID", "t_sec" = "time", 
                   "ANeck_x" = "X_accel", "ANeck_y" = "Y_accel", "ANeck_z" = "Z_accel",
-                  #"GNeck_x" = "X_gyro", "GNeck_y" = "Y_gyro", "GNeck_z" = "Z_gyro",
+                  "GNeck_x" = "X_gyro", "GNeck_y" = "Y_gyro", "GNeck_z" = "Z_gyro",
                   "Behavior_1" = "activity")
 
 # select the behaviours to include in the analysis
@@ -34,12 +34,13 @@ trainingPercentage <- 0.7
 
 # Sampling Threshold, run the below code to visualise the dataset and choose a threshold
 ####### THIS IS GOING TO HAVE TO BE AUTO, OR A PROMPT SCREEN???
-threshold <- 5000
+threshold <- 400
 
 #### CAN TRIAL MULTIPLE PER RUN ####
 
 # rlen (number of data presentation epochs)
-data_presentations <- c(1, 5, 10, 50, 100)
+data_presentations <- c(100)
+epochs <- 100
 
 # Window length, in seconds
 window <- 1
@@ -49,4 +50,4 @@ window <- 1
 overlap <- 0
 
 # Training Testing split method (choose from: random, chronological, LOIO)
-splitMethod <- c("random", "LOIO")
+splitMethod <- c("random", "chronological", "LOIO")

@@ -1,30 +1,31 @@
 # Now this will be the code that creates the SOM from the training and testing data we created
 
-source("GeneralFunctions.R")
-
 # when you have determined which shape is the best, run the full version and get all the outputs
 performOptimalSOM <- function(trDat, tstDat, width, height, file_path, epochs) {
   
-  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"), rlen = epochs)
+  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"), rlen = epochs, whatmap = c("measurements", "activity"))
   
   # save this optimal SOM
   file_path2 <- file.path(file_path, paste0(epochs, "_epochs"))
   save(ssom, file = file.path(file_path2, "Final_SOM.rda"))
   
-  ssom.pred <- predict(ssom, newdata = tstDat)
+  ssom.pred <- predict(ssom, newdata = tstDat, whatmap = "measurements")
   ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
   
+  # use table to make statistics for understanding the model performance
   true_positives  <- diag(ptab)
   false_positives <- rowSums(ptab) - true_positives
   false_negatives <- colSums(ptab) - true_positives
-  true_negatives  <- sum(ptab) - true_positives - false_positives - false_negatives
+  true_negatives  <- rep(sum(ptab), length(true_positives)) - rowSums(ptab) - colSums(ptab) + true_positives
   
-  SENS<-c(true_positives/(true_positives+false_negatives), shape=width)
-  PREC<-c(true_positives/(true_positives+false_positives), shape=width)
-  SPEC<-c(true_negatives/(true_negatives+false_positives), shape=width)
-  ACCU<-c((true_positives+true_negatives)/(true_positives+true_negatives+false_positives+false_negatives), shape=width)
+  SENS <- true_positives / (true_positives + false_negatives)
+  PREC <- true_positives / (true_positives + false_positives)
+  SPEC <- true_negatives / (true_negatives + false_positives)
+  ACCU <- sum(true_positives) / sum(ptab)
   
-  dat_out<-as.data.frame(rbind(SENS,PREC,SPEC,ACCU))
+  # Prepare the statistics data frame
+  dat_out <- as.data.frame(rbind(SENS, PREC, SPEC, ACCU=ACCU))
+  
   statistical_results <- cbind(test = rownames(dat_out), dat_out)
   write.csv(statistical_results, file.path(file_path2, "Statistical_results.csv"))
   
@@ -39,7 +40,7 @@ save_and_plot_optimal_SOM <- function(trDat, tstDat, width, height, file_path, e
   
   # Create a confusion matrix
   load(file = file.path(file_path, paste0(epochs, "_epochs"), "Final_SOM.rda"))
-  ssom.pred <- predict(ssom, newdata = tstDat)
+  ssom.pred <- predict(ssom, newdata = tstDat, whatmap = "measurements")
   ptab <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
   write.csv(ptab, file.path(file_path, paste0(epochs, "_epochs"), "Confusion_Matrix.csv"))
   

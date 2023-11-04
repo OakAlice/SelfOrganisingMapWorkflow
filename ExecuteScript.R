@@ -1,7 +1,7 @@
 ## Execute the script, all functions in order
 
 library(pacman)
-p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, grid, png)
+p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, grid, png, reshape2)
 
 # source the variables on the preceding script
 source("VariableEntry.R")
@@ -19,65 +19,28 @@ setwd(here())
 Experiment_path <- paste0("Experiment_", ExperimentNumber)
 ensure_dir(Experiment_path) # experiment directory
 
-for (w in window) { # for each of the window sizes create folders
-  window_path <- file.path(Experiment_path, paste0(w, "_sec_window"))
-  ensure_dir(window_path)
-  
-  for (o in overlap) { # for each of the overlap %s
-    overlap_path <- file.path(window_path, paste0(o, "%_overlap"))
-    ensure_dir(overlap_path)
-    
-    for (s in splitMethod) { # for each of the split methods
-      split_path <- file.path(overlap_path, s)
-      ensure_dir(split_path)
-      
-      for (e in data_presentations) {
-        epochs_path <- file.path(split_path, paste0(e, "_epochs"))
-        ensure_dir(epochs_path)
-                                 
+create_experiment_directories <- function(base_path, windows, overlaps, splits, epochs) {
+  paths <- list()
+  for (w in windows) {
+    for (o in overlaps) {
+      for (s in splits) {
+        for (e in epochs) {
+          path <- file.path(base_path, paste0(w, "_sec_window"), paste0(o, "%_overlap"), s, paste0(e, "_epochs"))
+          ensure_dir(path)
+          paths[[length(paths) + 1]] <- path
+        }
       }
     }
   }
+  return(paths)
 }
 
 
 #### Format Data ####
-  # load in the data
-  MoveData0 <- read.csv(MovementData)
-  
-  # select and rename the relevant columns
-  MoveData <- subset_and_rename(MoveData0, columnSubset)
-  
-  # only select the test individuals
-  if (exists("test_individuals")){
-    # selected_ids <- 47
-    selected_ids <- unique(MoveData$ID)[1:test_individuals]
-    MoveData <- subset(MoveData, ID %in% selected_ids)
-  }
-  
-  # format time # this will be different between studies
-  # e.g., necessary for Axivity papers, but not for the DogMoveData
-  #MoveData$time <- as.POSIXct((MoveData$time - 719529) * 86400, origin = "1970-01-01", tz = "UTC")
-  
-  # potentially downsample the data
-  if (exists("desired_Hz") && exists("current_Hz")) {
-    if (desired_Hz < current_Hz) {
-      skip <- current_Hz / desired_Hz
-      downsampled_data <- MoveData[seq(1, nrow(MoveData), by = skip), ]
-    } else if (desired_Hz == current_Hz) {
-      downsampled_data <- MoveData
-    } else {
-      message("desired_Hz is higher than the current_Hz. Cannot upsample.")
-    }
-  } else {
-    message("Desired_Hz and current_Hz not both defined.")
-  }
-  MoveData <- MoveData[seq(1, nrow(MoveData), by = skip), ]
-  
-  # select only the chosen behaviours
-  MoveData <- MoveData[MoveData$activity %in% selectedBehaviours, ]
-  write.csv(MoveData,paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv')) # save the output
-
+# load in the data
+MoveData <- read.csv(MovementData)
+formatted_data <- format_movement_data(MoveData, columnSubset, test_individuals, desired_Hz, current_Hz, selectedBehaviours, ExperimentNumber)
+write.csv(formatted_data, paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv'))
 
 #### Feature Creation ####
 MoveData <- read.csv(paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv'))
@@ -123,7 +86,7 @@ for (window_length in window) { # for each of the windows
       print(file_path)
       
       load(file = file.path(file_path, "TrainingData.rda"))
-      load(file = file.path(file_path, "TestingData.rda"))
+      load(file = file.path(file_path, "TestingData.rda")) # this makes Jack sad, :(
       optimal_dimensions <- run_som_tests(trDat, tstDat, file_path)
       write.csv(optimal_dimensions, file.path(file_path, "Optimal_dimensions.csv"))
     }

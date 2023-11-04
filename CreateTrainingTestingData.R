@@ -1,8 +1,5 @@
 # Code to create the training and testing data, saving them both as .rda files
 
-source("GeneralFunctions.R")
-source("VariableEntry.R")
-
 # balance the data according to the above determined value
 balance_data <- function(dat, threshold) {
   
@@ -29,7 +26,7 @@ balance_data <- function(dat, threshold) {
   
 # Formatting the data #### MAY HAVE TO CHANGE THIS
 trSamp2 <- function(x) { 
-    d <- x[,2:21]
+    d <- x[,2:21] # TODO(jeadie) why/how is this hardcoded.
     activity <- as.factor(x$activity) # Corresponding activities
     out <- list(measurements = as.matrix(d), activity = activity)
     return(out)
@@ -84,6 +81,7 @@ split_condition <- function(file_path, threshold, split, trainingPercentage) {
     
   } else if (split == "LOIO") {
     
+    # TODO(jeadie): Maybe a mistake
     number_leave_out <- ceiling(0.2*test_individuals)
     
     # Sample a random individual from the dataset

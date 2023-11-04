@@ -1,53 +1,37 @@
 # Functions to test multiple shapes to find the optimal shape for SOM
 # Adapted from Gaschk et al., 2023
-
-# split <- "LOIO"
-#file_path <- file.path(Experiment_path, paste0(window, "_sec_window"), paste0(overlap, "%_overlap"), split)
-#load(file = file.path(file_path, "TrainingData.rda"))
-#load(file = file.path(file_path, "TestingData.rda"))
-  
   
 # run the actual SOM tests combining many of the functions above
 run_som_tests <- function(trDat, tstDat, file_path) {
   
-  results <- list()
-  shape_accuracy_score <- list() # to store accuracy scores for each iteration
-  somsize3 = generate_shapes() # shapes to test
+  som_shapes <- generate_shapes() # Generate a list of SOM shapes to test
+  AllIterationsResults <- data.frame() # Initialize an empty dataframe to store results
   
-  AllIterationsResults <- data.frame() # initialize an empty dataframe outside the loop
-  
-  for (bb in 1:nrow(somsize3)) { # loop through the different shapes
-    
-    for (iter in 1:10) { # Go through the 10 iterations for each shape
-      iteration_results <- testing_the_SOM(trDat, tstDat, somsize3[bb,1], somsize3[bb,2])
-      AllIterationsResults <- rbind(AllIterationsResults, iteration_results)
+  for (shape_index in 1:nrow(som_shapes)) { # Loop through the different shapes
+      print(shape_index)
+    for (iter in 1:1) { # Run multiple iterations for each shape
+      print(iter)
+      iteration_results <- testing_the_SOM(trDat, tstDat, som_shapes[shape_index, 1], som_shapes[shape_index, 2])
+      iteration_results$Width <- som_shapes[shape_index, 1] # Add width to the results
+      iteration_results$Height <- som_shapes[shape_index, 2] # Add height to the results
+      AllIterationsResults <- rbind(AllIterationsResults, iteration_results) # Combine iteration results
     }
-    
-    shape_accuracy_score[[bb]] <- generate_accuracy_score(AllIterationsResults)
-    results[[bb]] <- list("acc3list" = AllIterationsResults)
   }
   
-  # Combine all accuracy scores
-  all_shape_averages <- do.call(rbind, shape_accuracy_score)
+  # Calculate mean accuracy for each width-height combination
+  mean_accuracy_scores <- AllIterationsResults %>%
+    group_by(Width, Height) %>%
+    summarize(mean_accuracy = mean(ACCU), .groups = "drop")
   
-  # Calculate mean accuracy for each width-height combination 
-  average_accuracies <- all_shape_averages %>%
-    group_by(width, height) %>%
-    summarize(mean_acc = mean(acc), .groups = "drop")
+  # Determine the shape with the highest average accuracy
+  best_shape <- mean_accuracy_scores[which.max(mean_accuracy_scores$mean_accuracy), ]
+  best_width <- best_shape$Width
+  best_height <- best_shape$Height
   
-  # make the heatmap using the average_accuracies
-  heatmap <- create_heatmap(average_accuracies, file_path)
-  
-  best_shape <- determine_best_shape(average_accuracies)
-  best_width <- best_shape$width
-  best_height <- best_shape$height
-  
-  # Add the heatmap to the results list
-  results[["average_heatmap"]] <- heatmap
-  
-  # Return the results, including the best shapes 
-  return(list("best_width" = best_width, "best_height" = best_height))
+  # Return the best shape information
+  return("best_shape" = best_shape)
 }
+
 
 # choose the best shape
 determine_best_shape <- function(average_accuracies) {
@@ -55,23 +39,25 @@ determine_best_shape <- function(average_accuracies) {
   return(list("width" = best_shape$width, "height" = best_shape$height))
 }
 
-# the actual test that's performed on the training/testing data, returns overallResultsTable
-testing_the_SOM <- function(trDat, tstDat, width, height) {  # originally doSOMperf
+testing_the_SOM <- function(trDat, tstDat, width, height) {
+  
+  statisticsTable <- data.frame()
   
   # build the som using the training data
-  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"))
-  # predict on the testing data # skip if it doesn't work
+  ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"), whatmap = c("measurements", "activity"))
+  
+  # predict on the testing data
   tryCatch({
-    ssom.pred <- predict(ssom, newdata = tstDat)
-  }, 
-  error = function(e) {
+    ssom.pred <- predict(ssom, newdata = tstDat, whatmap = "measurements")
+  }, error = function(e) {
     if (grepl("Number of columns of newdata do not match codebook vectors", e$message)) {
       print("Error encountered with mismatched columns. Skipping this iteration.")
-      next()
+      return(invisible())  # Use return() to exit the function
     } else {
       stop(e)  # If it's a different error, continue with the error propagation
     }
   })
+  
   # save the results as a table
   resultsTable <- table(predictions = ssom.pred$predictions$act, act = tstDat$act)
   
@@ -79,43 +65,61 @@ testing_the_SOM <- function(trDat, tstDat, width, height) {  # originally doSOMp
   true_positives  <- diag(resultsTable)
   false_positives <- rowSums(resultsTable) - true_positives
   false_negatives <- colSums(resultsTable) - true_positives
-  true_negatives  <- sum(resultsTable) - true_positives - false_positives - false_negatives
-  SENS<-c(true_positives/(true_positives+false_negatives), shape=width)
-  PREC<-c(true_positives/(true_positives+false_positives), shape=width)
-  SPEC<-c(true_negatives/(true_negatives+false_positives), shape=width)
-  ACCU<-c((true_positives+true_negatives)/(true_positives+true_negatives+false_positives+false_negatives), shape=width)
+  true_negatives  <- rep(sum(resultsTable), length(true_positives)) - rowSums(resultsTable) - colSums(resultsTable) + true_positives
   
-  # save the statistics 
-  statisticsTable <- as.data.frame(rbind(SENS,PREC,SPEC,ACCU))
+  SENS <- true_positives / (true_positives + false_negatives)
+  PREC <- true_positives / (true_positives + false_positives)
+  SPEC <- true_negatives / (true_negatives + false_positives)
+  ACCU <- sum(true_positives) / sum(resultsTable)
+  
+  # Prepare the statistics data frame
+  statisticsTable <- as.data.frame(rbind(SENS, PREC, SPEC, ACCU=ACCU))
+  
+  # Add 'width' and 'height' to the data frame
+  statisticsTable$Width <- width
+  statisticsTable$Height <- height
+  
   # save as a table that gives the results, size, and time it took to compute
-  overallResultsTable <- cbind(test = rownames(statisticsTable), statisticsTable, width=width, height=height)
-  # return that dataframe
+  overallResultsTable <- cbind(Test=rownames(statisticsTable), statisticsTable)
+  
+  # return that data frame
   return(overallResultsTable)
 }
 
+
 # generate shapes to test
 generate_shapes <- function() {
-  somsize <- rep(seq(4,9,1),6) # Create some widths
-  somsize2 <- rep(4:9, times=1, each=6) # Create some lengths
+  somsize <- rep(seq(6,9,1),4) # Create some widths
+  somsize2 <- rep(6:9, times=1, each=4) # Create some lengths
   somsize3 <- cbind(somsize, somsize2) # Combine the sizes
   return(somsize3)
 }
 
 # generate an accuracy heatmap matrix
-generate_accuracy_score <- function(AllIterationsResults) {
-  accuracy_scores <- subset(AllIterationsResults, test=='ACCU') # extract the accuracy scores for each
-  # rearrange to be a long dataframe
+generate_accuracy_score <- function(AllIterationsResults, selectedBehaviours) {
+  # Extract the accuracy scores for each behavior
+  accuracy_scores <- subset(AllIterationsResults, Test == 'ACCU')
+  
+  # Make sure we're not trying to gather more columns than exist
+  max_col_index <- min(ncol(accuracy_scores), length(selectedBehaviours) + 1) # +1 for the 'test' column
+  
+  # Rearrange to be a long dataframe
   long_accuracy_scores <- accuracy_scores %>%
-    gather(key = "behavior", value = "accuracy", 
-           2:length(selectedBehaviours)) %>%
-            select(behavior, accuracy, width, height)
+    pivot_longer(
+      cols = -c(Test, Width, Height),  # Exclude Test, Width, and Height from the gathering to long format
+      names_to = "Behaviour",
+      values_to = "Accuracy"
+    ) %>%
+    select(Behaviour, Accuracy, Width, Height)
+  
+  # Calculate mean accuracy scores
   mean_accuracy_scores <- long_accuracy_scores %>%
-    group_by(width, height) %>%
-    summarise(mean_accuracy = mean(accuracy), .groups = "drop")
+    group_by(Width, Height) %>%
+    summarise(mean_accuracy = mean(Accuracy, na.rm = TRUE), .groups = "drop")
   
-  shape_accuracy_score <- data.frame(acc=mean_accuracy_scores$mean_accuracy, width=mean_accuracy_scores$width, height=mean_accuracy_scores$height)
   
-  return(shape_accuracy_score)
+  # Return the mean accuracy scores
+  return(mean_accuracy_scores)
 }
 
 # Function to create and save an accuracy heatmap
