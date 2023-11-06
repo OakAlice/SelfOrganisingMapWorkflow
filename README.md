@@ -1,6 +1,6 @@
 # Workflow for Self-Organising Maps
 
-I've observed that there isn't a consistent method for data pre-processing in machine learning related to accelerometry behavior recognition. My goal is to understand the influence of various preprocessing techniques on overall model performance. This script is designed to load in a labelled animal movement dataset and then run experiments with different model parameters. I used the Self-Organizing Map (SOM) because I am familiar with it from previous research. Expansion of this project will include multiple models.
+I've observed that there isn't a consistent method for data pre-processing in machine learning related to accelerometry behaviour recognition. My goal is to understand the influence of various preprocessing techniques on overall model performance. This script is designed to load in a labelled animal movement dataset and then run experiments with different preprocessing and model parameters. I used the Self-Organizing Map (SOM) because I am familiar with it from previous research. Expansion of this project will include multiple models.
 
 Example data used was dog movement data from [Vehkoaja et al., 2020](https://www.sciencedirect.com/science/article/pii/S2352340922000348) and possum movement data from Annett et al., 2023 (published link soon). SOM code adapted from the github of [Christofer Clemente](https://github.com/cclemente/Animal_accelerometry/tree/main).
 
