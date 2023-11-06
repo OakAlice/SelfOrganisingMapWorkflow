@@ -23,6 +23,28 @@ ensure_dir <- function(dir_name) {
   }
 }
 
+# make the specific directories we want
+create_experiment_directories <- function(Experiment_path, window, overlap, splitMethod, data_presentations) {
+  for (w in window) {
+    for (o in overlap) {
+      for (s in splitMethod) {
+        for (e in data_presentations) {
+          # Construct the path for the directory
+          path <- file.path(Experiment_path, paste0(w, "_sec_window"), paste0(o, "%_overlap"), s, paste0(e, "_epochs"))
+          
+          # Check if directory exists, if not, create it
+          if (!dir.exists(path)) {
+            dir.create(path, recursive = TRUE, showWarnings = TRUE)
+            message("Created directory: ", path)
+          } else {
+            message("Directory already exists: ", path)
+          }
+        }
+      }
+    }
+  }
+}
+
 # plot a png and then move it to the right directory --> this was a problem for some of my png images
 plot_and_move <- function(filename, file_path, plot_expr) {
   png(filename = filename)

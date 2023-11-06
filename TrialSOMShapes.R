@@ -9,9 +9,17 @@ run_som_tests <- function(trDat, tstDat, file_path) {
   
   for (shape_index in 1:nrow(som_shapes)) { # Loop through the different shapes
       print(shape_index)
-    for (iter in 1:1) { # Run multiple iterations for each shape
+    for (iter in 1:10) { # Run multiple iterations for each shape
+      
+      # shape_index <- 3
+      #iter <- 1
+      
       print(iter)
-      iteration_results <- testing_the_SOM(trDat, tstDat, som_shapes[shape_index, 1], som_shapes[shape_index, 2])
+      
+      width <- as.numeric(som_shapes[shape_index, 1, drop = TRUE])
+      height <- as.numeric(som_shapes[shape_index, 2, drop = TRUE])
+      
+      iteration_results <- testing_the_SOM(trDat, tstDat, width, height)
       iteration_results$Width <- som_shapes[shape_index, 1] # Add width to the results
       iteration_results$Height <- som_shapes[shape_index, 2] # Add height to the results
       AllIterationsResults <- rbind(AllIterationsResults, iteration_results) # Combine iteration results
@@ -20,8 +28,17 @@ run_som_tests <- function(trDat, tstDat, file_path) {
   
   # Calculate mean accuracy for each width-height combination
   mean_accuracy_scores <- AllIterationsResults %>%
+    # First, filter out only the ACCU rows
+    filter(Test == "ACCU") %>%
+    # Then gather all behavior columns into 'key-value' pairs
+    pivot_longer(
+      cols = -c(Test, Width, Height), # Exclude Test, Width, and Height from the gathering
+      names_to = "Behavior",
+      values_to = "Accuracy"
+    ) %>%
+    # Now, group by Width and Height to calculate the mean for each SOM configuration
     group_by(Width, Height) %>%
-    summarize(mean_accuracy = mean(ACCU), .groups = "drop")
+    summarize(mean_accuracy = mean(as.numeric(Accuracy), na.rm = TRUE), .groups = "drop")
   
   # Determine the shape with the highest average accuracy
   best_shape <- mean_accuracy_scores[which.max(mean_accuracy_scores$mean_accuracy), ]

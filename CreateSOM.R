@@ -2,10 +2,12 @@
 
 # when you have determined which shape is the best, run the full version and get all the outputs
 performOptimalSOM <- function(trDat, tstDat, width, height, file_path, epochs) {
+  #epochs = 100
   
   ssom <- supersom(trDat, grid = somgrid(width, height, "hexagonal"), rlen = epochs, whatmap = c("measurements", "activity"))
   
   # save this optimal SOM
+  #file_path2 <- "Possum_data"
   file_path2 <- file.path(file_path, paste0(epochs, "_epochs"))
   save(ssom, file = file.path(file_path2, "Final_SOM.rda"))
   

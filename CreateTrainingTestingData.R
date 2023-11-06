@@ -2,6 +2,7 @@
 
 # balance the data according to the above determined value
 balance_data <- function(dat, threshold) {
+  #dat <- processed_data
   
   # Determine counts of each 'activity' and identify over-represented behaviors
   activity_counts <- dat %>% 
@@ -26,7 +27,7 @@ balance_data <- function(dat, threshold) {
   
 # Formatting the data #### MAY HAVE TO CHANGE THIS
 trSamp2 <- function(x) { 
-    d <- x[,2:21] # TODO(jeadie) why/how is this hardcoded.
+    d <- x[,2:21] # TODO: why/how is this hardcoded.
     activity <- as.factor(x$activity) # Corresponding activities
     out <- list(measurements = as.matrix(d), activity = activity)
     return(out)
@@ -34,14 +35,11 @@ trSamp2 <- function(x) {
   
 # process the data
 split_condition <- function(file_path, threshold, split, trainingPercentage) {
-  # file_path <- "Experiment_4/1_sec_window/0%_overlap/Processed_Data.csv"
-  # split <-  "random"
-  
+
   dat <- read.csv(file_path)
   dat <- na.omit(dat)
   
   # Balance the data
-  # dat <- balance_data
   dat <- balance_data(dat, threshold)
 
 # Split data by different conditions

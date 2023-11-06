@@ -8,12 +8,13 @@ format_movement_data <- function(MovementData, columnSubset, test_individuals = 
   # only select the test individuals
   if (!is.null(test_individuals)) {
     selected_ids <- unique(MoveData$ID)[1:test_individuals]
+    # selected_ids <- unique(MoveData$ID)[11:45]
     MoveData <- subset(MoveData, ID %in% selected_ids)
   }
   
   # format time
   # This part is commented out because it's specific to certain studies.
-  # MoveData$time <- as.POSIXct((MoveData$time - 719529) * 86400, origin = "1970-01-01", tz = "UTC")
+  #MoveData$time <- as.POSIXct((MoveData$time - 719529) * 86400, origin = "1970-01-01", tz = "UTC")
   
   # potentially downsample the data
   if (!is.null(desired_Hz) && !is.null(current_Hz)) {

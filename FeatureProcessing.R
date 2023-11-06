@@ -29,6 +29,10 @@ compute_features <- function(window_chunk, featuresList) {
     if ("sd" %in% featuresList) {
       result[paste0("sd_", axis)] <- sd(window_chunk[[axis]])
     }
+    
+    if ("sk" %in% featuresList){
+      result[paste0("sk_", axis)] <- e1071::skewness(window_chunk[[axis]], na.rm = TRUE)
+    }
   }
   
   accel_axes <- intersect(available_axes, c("X_accel", "Y_accel", "Z_accel"))
@@ -51,10 +55,28 @@ compute_features <- function(window_chunk, featuresList) {
   
   if ("cor" %in% featuresList) {
     for (i in 1:(length(accel_axes) - 1)) {
-      for (j in (i+1):length(accel_axes)) {
+      for (j in (i + 1):length(accel_axes)) {
         axis1 <- accel_axes[i]
         axis2 <- accel_axes[j]
-        result[paste0("cor_", axis1, "_", axis2)] <- cor(window_chunk[[axis1]], window_chunk[[axis2]], use="complete.obs")
+        
+        vec1 <- window_chunk[[axis1]]
+        vec2 <- window_chunk[[axis2]]
+        
+        # Check for NA variance and non-zero variance in both vectors
+        var_vec1 <- var(vec1, na.rm = TRUE)
+        var_vec2 <- var(vec2, na.rm = TRUE)
+        
+        if (!is.na(var_vec1) && var_vec1 != 0 && !is.na(var_vec2) && var_vec2 != 0) {
+          # Check for complete cases
+          complete_cases <- complete.cases(vec1, vec2)
+          if (any(complete_cases)) {
+            result[paste0("cor_", axis1, "_", axis2)] <- cor(vec1[complete_cases], vec2[complete_cases])
+          } else {
+            result[paste0("cor_", axis1, "_", axis2)] <- NA  # No complete pairs
+          }
+        } else {
+          result[paste0("cor_", axis1, "_", axis2)] <- NA  # No variability or NA returned
+        }
       }
     }
   }
@@ -75,12 +97,13 @@ process_data <- function(MoveData, featuresList, window, overlap) {
   
   # Define the starting and ending points for the chunks
   st <- 1
+  fn <- st + window_samples -1
 
   # Iterate over the chunks of data
   while (fn <= nrow(MoveData)) {
     
     # Extract the current chunk
-    window_chunk <- MoveData[st:st+window_samples-1, ]
+    window_chunk <- MoveData[st:fn, ]
     
     # Compute features for the chunk
     features_data <- compute_features(window_chunk, featuresList)
@@ -90,9 +113,12 @@ process_data <- function(MoveData, featuresList, window, overlap) {
     
     if (overlap == 0) { # if no overlap, advance by a full window length
       st <- st + window_samples
+      fn <-  fn + window_samples
     } else { # if there is some overlap, calculate it
       overlapped_samples <- (overlap / 100) * window_samples
       st <- st + (window_samples - overlapped_samples)
+      fn <- fn + (window_samples - overlapped_samples)
+      
     }
   }
   

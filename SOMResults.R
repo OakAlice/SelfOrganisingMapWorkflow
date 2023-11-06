@@ -65,8 +65,3 @@ Plot_results <- function(ExperimentNumber, Results_maps) {
   }
   dev.off()
 }
-
-# To use the function:
-# ExperimentNumber <- 1
-# Results_maps <- find_all_instances(paste0("Experiment_", ExperimentNumber), "optimal_SOM_plot.png")
-# Plot_results(ExperimentNumber, Results_maps)

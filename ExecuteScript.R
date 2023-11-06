@@ -1,10 +1,11 @@
 ## Execute the script, all functions in order
 
 library(pacman)
-p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, grid, png, reshape2)
+p_load(here, dplyr, tidyverse, kohonen, data.table, lattice, glue, moments, fs, grid, png, reshape2, e1071)
 
 # source the variables on the preceding script
 source("VariableEntry.R")
+source("RefomattingData.R")
 source("GeneralFunctions.R")
 source("FeatureProcessing.R")
 source("CreateTrainingTestingData.R")
@@ -18,27 +19,11 @@ setwd(here())
 # There can be different overlaps, windows, splits, and epochs
 Experiment_path <- paste0("Experiment_", ExperimentNumber)
 ensure_dir(Experiment_path) # experiment directory
-
-create_experiment_directories <- function(base_path, windows, overlaps, splits, epochs) {
-  paths <- list()
-  for (w in windows) {
-    for (o in overlaps) {
-      for (s in splits) {
-        for (e in epochs) {
-          path <- file.path(base_path, paste0(w, "_sec_window"), paste0(o, "%_overlap"), s, paste0(e, "_epochs"))
-          ensure_dir(path)
-          paths[[length(paths) + 1]] <- path
-        }
-      }
-    }
-  }
-  return(paths)
-}
-
+create_experiment_directories(Experiment_path, window, overlap, splitMethod, data_presentations) # subdirectories
 
 #### Format Data ####
 # load in the data
-MoveData <- read.csv(MovementData)
+MoveData0 <- read.csv(MovementData)
 formatted_data <- format_movement_data(MoveData, columnSubset, test_individuals, desired_Hz, current_Hz, selectedBehaviours, ExperimentNumber)
 write.csv(formatted_data, paste0('Experiment_', ExperimentNumber, '/Formatted_MoveData.csv'))
 
@@ -117,8 +102,8 @@ for (window_length in window) { # for each of the windows
       optimal_dimensions <- read.csv(file = file.path(file_path, "Optimal_dimensions.csv"))
       
       # extract the shape
-      width <- optimal_dimensions$best_width
-      height <- optimal_dimensions$best_height
+      width <- optimal_dimensions$Width
+      height <- optimal_dimensions$Height
       
       # produce the results
       som_results <- performOptimalSOM(trDat, tstDat, width, height, file_path, epochs)
