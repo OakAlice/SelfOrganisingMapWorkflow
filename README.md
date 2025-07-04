@@ -1,5 +1,9 @@
 # Workflow for Self-Organising Maps
 
+I don't recommend using this version - I've made a lot of changes since this was made. Consider this a relic of my thinking at the beginning of my PhD.
+
+---
+
 This is an updated version of Chris' original script (found here: [Christofer Clemente](https://github.com/cclemente/Animal_accelerometry/tree/main)). Unfortunately, that script had a few errors, which have been corrected here. Changes are the correct implementation of the kohonen package, ensured independence training and testing data, as well as the inclusion of a validation set, upon which to tune hyperparameters (NOTE: final correction still in progress). 
 
 Example data used was dog movement data from [Vehkoaja et al., 2020](https://www.sciencedirect.com/science/article/pii/S2352340922000348)
